@@ -120,7 +120,7 @@ static void socks_accept_handle(void *s, int fd, void *data, int mask) {
 int main(int argc, char *argv[]) {
 	struct socks_server_context *remote_server;
 	enum socks_encrypt_method encry_method = NO_ENCRYPT;
-	struct encryptor_key *key = NULL;
+	struct encryptor_key *enc_key = NULL;
 	size_t key_len;
 	int opt;
 
@@ -128,25 +128,29 @@ int main(int argc, char *argv[]) {
 		switch (opt) {
 		case 'p':
 			server_port = atoi(optarg);
+			printf("%d\n", server_port);
 			break;
 		case 'm':
-			if (!strcmp("xor", optarg))
+			if (!strcmp("xor", optarg)) {
 				encry_method = XOR_METHOD;
-			else if (!strcmp("rc4", optarg))
+			} else if (!strcmp("rc4", optarg)) {
 				encry_method = RC4_METHOD;
+			}
 			break;
 		case 'e':
 			key_len = strlen(optarg);
-			key = malloc(sizeof(*key) + key_len);
-			key->len = key_len;
-			memcpy(key->key, optarg, key_len);
+			enc_key = malloc(sizeof(*enc_key));
+			enc_key->len = key_len;
+			enc_key->key = malloc(key_len);
+			memcpy(enc_key->key, optarg, key_len);
 			break;
 		default:
 			fprintf(stderr, "usage: %s [-p server_port] [-m xor|rc4] [-e key]\n", argv[0]);
 			exit(1);
 		}
 	}
-	remote_server = socks_create_server(server_port, encry_method, key);
+	printf("here\n");
+	remote_server = socks_create_server(server_port, encry_method, enc_key);
 	if (remote_server == NULL) {
 		DIE("ss_create_server failed!");
 	}

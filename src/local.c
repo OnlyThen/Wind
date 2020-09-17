@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 {
 	struct socks_server_context *local_server;
 	enum socks_encrypt_method encry_method = NO_ENCRYPT;
-	struct encryptor_key *key = NULL;
+	struct encryptor_key *enc_key = NULL;
 	size_t key_len;
 	int opt;
 	if (argc == 1) {
@@ -144,9 +144,10 @@ int main(int argc, char *argv[])
 			break;
 		case 'e':
 			key_len = strlen(optarg);
-			key = malloc(sizeof(*key) + key_len);
-			key->len = key_len;
-			memcpy(key->key, optarg, key_len);
+			enc_key = malloc(sizeof(*enc_key));
+			enc_key->len = key_len;
+			enc_key->key = malloc(key_len);
+			memcpy(enc_key->key, optarg, key_len);
 			break;
 		default:
 			fprintf(stderr, "usage: %s [-l remote_ip] [-p remote_port] [-s listen_port] [-m xor|rc4] [-e key]\n", argv[0]);
@@ -154,7 +155,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	local_server = socks_create_server(listen_port, encry_method, key);
+	local_server = socks_create_server(listen_port, encry_method, enc_key);
 	if (local_server == NULL) {
 		DIE("ss_create_server failed!");
     }
