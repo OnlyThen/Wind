@@ -2,7 +2,7 @@
 #include "encrypt.h"
 #include "socket_wrap.h"
 #include "debug.h"
-
+#include <strings.h>
 #include <sys/socket.h>
 
 static int socks_fd_set_init(struct socks_fd_set **fd_set) {
