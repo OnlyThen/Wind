@@ -34,13 +34,13 @@ int create_server_socket(uint16_t port) {
 
 	server_s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (server_s == -1) {
-		//DIE("unable to create socket");
+		DIE("unable to create socket");
     }
 
 	/* accept fd must set noblock for rst */
 	ret = fd_set_noblock(server_s);
 	if (ret < 0) {
-		//DIE("fd_set_noblock failed");
+		DIE("fd_set_noblock failed");
     }
 
 	/* close server socket on exec so cgi's can't write to it */

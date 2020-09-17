@@ -154,7 +154,7 @@ static struct socks_conn_info *get_addr_info(const struct socks_request_frame *r
 }
 
 static int socks_poll(struct socks_server_context *server) {
-	int numevents = 0;
+	int events_num = 0;
 	int retval;
 	struct socks_fd_set *set = server->ss_allfd_set;
 	struct socks_conn_context *conn;
@@ -163,28 +163,32 @@ static int socks_poll(struct socks_server_context *server) {
 	memcpy(&set->copy_rfds, &set->rfds, sizeof(fd_set));
 	memcpy(&set->copy_wfds, &set->wfds, sizeof(fd_set));
 	retval = select(server->max_fd + 1, &set->copy_rfds, &set->copy_wfds, NULL, NULL);
+	printf("retval: %d\n", retval);
 	if (retval > 0) {
 		if (FD_ISSET(server->sock_fd, &set->copy_rfds)) {
 			server->io_proc.mask |= AE_READABLE;
-			server->fd_state[numevents].type = SOCKS_SERVER_CONTEXT;
-			server->fd_state[numevents++].context_ptr = server;
+			server->fd_state[events_num].type = SOCKS_SERVER_CONTEXT;
+			server->fd_state[events_num].context_ptr = server;
+			events_num += 1;
 		}
 		list_for_each_entry(conn, &server->conn->list, list) {
 			if (conn->fd_mask & AE_READABLE && FD_ISSET(conn->conn_fd, &set->copy_rfds)) {
 				conn->io_proc.mask |= AE_READABLE;
-				server->fd_state[numevents].type = SOCKS_CONN_CONTEXT;
-				server->fd_state[numevents++].context_ptr = conn;
+				server->fd_state[events_num].type = SOCKS_CONN_CONTEXT;
+				server->fd_state[events_num].context_ptr = conn;
+				events_num += 1;
 			}
 		}
 		list_for_each_entry(remote, &server->remote->list, list) {
 			if (remote->fd_mask & AE_READABLE && FD_ISSET(remote->remote_fd, &set->copy_rfds)) {
 				remote->io_proc.mask |= AE_READABLE;
-				server->fd_state[numevents].type = SOCKS_REMOTE_CONTEXT;
-				server->fd_state[numevents++].context_ptr = remote;
+				server->fd_state[events_num].type = SOCKS_REMOTE_CONTEXT;
+				server->fd_state[events_num].context_ptr = remote;
+				events_num += 1;
 			}
 		}
 	}
-	return numevents;
+	return events_num;
 }
 
 struct socks_server_context *socks_create_server(uint16_t port, enum socks_encrypt_method encrypt_method, const struct encryptor_key *key) {
@@ -241,7 +245,7 @@ struct socks_conn_context *socks_server_add_conn(struct socks_server_context *s,
 
 	new_conn = calloc(1, sizeof(*new_conn));
 	if (new_conn == NULL) {
-		//debug_print("colloc failed: %s", strerror(errno));
+		debug_print("colloc failed: %s", strerror(errno));
 		return NULL;
 	}
 	new_conn->conn_fd = conn_fd;
@@ -380,14 +384,14 @@ int socks_request_handle(struct socks_conn_context *conn, struct socks_conn_info
 }
 
 void socks_loop(struct socks_server_context *server) {
-	int numevents;
+	int events_num;
 	struct socks_io_event *event;
 	int fd;
 	int i;
 
 	while (1) {
-		numevents = socks_poll(server);
-		for (i = 0; i < numevents; i += 1) {
+		events_num = socks_poll(server);
+		for (i = 0; i < events_num; i += 1) {
 			if (server->fd_state[i].type == SOCKS_SERVER_CONTEXT) {
 				/* accept */
 				event = &server->io_proc;
@@ -409,8 +413,8 @@ void socks_loop(struct socks_server_context *server) {
 }
 
 void socks_server_set_handle(struct socks_server_context *server, int mask, socks_ioproc *r_callback, socks_ioproc *w_callback, void *para) {
+	
 	struct socks_io_event *event = &server->io_proc;
-
 	memset(event, 0, sizeof(*event));
 	event->mask = mask;
 	event->rfproc = r_callback;

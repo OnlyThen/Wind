@@ -99,19 +99,19 @@ err:
 static void socks_accept_handle(void *s, int fd, void *data, int mask) {
 	int conn_fd;
 	struct socks_conn_info conn_info;
-	struct socks_conn_context *nc;
+	struct socks_conn_context *conn_ctx;
 
 	conn_fd = socks_accept(fd, conn_info.ip, &conn_info.port);
 	if (conn_fd < 0) {
 		debug_print("ss_accetp failed: %s", strerror(errno));
 		return;
 	}
-	nc = socks_server_add_conn(s, conn_fd, AE_READABLE, &conn_info);
-	if (nc == NULL) {
+	conn_ctx = socks_server_add_conn(s, conn_fd, AE_READABLE, &conn_info);
+	if (conn_ctx == NULL) {
 		debug_print("ss_server_add_conn failed: %s", strerror(errno));
 		return;
 	}
-	socks_conn_set_handle(nc, AE_READABLE, socks_io_handle, NULL, NULL);
+	socks_conn_set_handle(conn_ctx, AE_READABLE, socks_io_handle, NULL, NULL);
 }
 
 int main(int argc, char *argv[])
