@@ -106,7 +106,7 @@ int client_connect(const char *addr, uint16_t port) {
 	}
 	/* FIXME: it may block! */
 	if (connect(s, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
-		//debug_print("connect failed: %s", strerror(errno));
+		debug_print("connect failed: %s", strerror(errno));
 		close(s);
 		return -1;
 	}

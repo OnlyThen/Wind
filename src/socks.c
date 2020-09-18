@@ -73,7 +73,7 @@ static struct socks_request_frame *socks_get_requests(struct socks_request_frame
  		return NULL;
  	}
 	request->ver = 0x05;
-	request->cmd = buf->data[1];
+	request->cmd = 0x01;
 	request->rsv = 0x0;
 	switch (buf->data[3]) { /* ATYP */
 	case 0x01: /* IPv4 */
@@ -88,9 +88,6 @@ static struct socks_request_frame *socks_get_requests(struct socks_request_frame
 		request->atyp = 0x03;
 		ret = server->socks_recv(conn->conn_fd, request->dst_addr, 1, 0, conn);
 		if (ret != 1) {
-			return NULL;
-		}
-		if (ret > 255) {
 			return NULL;
 		}
 		ret = server->socks_recv(conn->conn_fd, &request->dst_addr[1], request->dst_addr[0], 0, conn);
@@ -336,9 +333,6 @@ int socks_handshake_handle(struct socks_conn_context *conn) {
 	if (buf->data[0] != 0x05) {
 		goto err;
 	}
-	if (buf->data[1] == 0) {
-		goto err;
-	}
 	printf("client methods num: %d\n", buf->data[1]);
 	/* TODO: 检查客户端支持的认证机制 */
 	buf->data[0] = 0x05;
@@ -373,7 +367,7 @@ int socks_request_handle(struct socks_conn_context *conn, struct socks_conn_info
 	buf->data[0] = 0x5;
 	buf->data[1] = 0x0;
 	buf->data[2] = 0x0;
-	buf->data[3] = request.atyp;
+	buf->data[3] = 0x1;
 	int s_addr = inet_aton("0.0.0.0", NULL);
 	uint32_t us_addr = htonl(s_addr);
 	memcpy(&buf->data[4], &us_addr, 4);
