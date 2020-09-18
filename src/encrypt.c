@@ -1,5 +1,6 @@
 #include "encrypt.h"
 #include <string.h>
+
 struct socks_encryptor *socks_create_encryptor(enum socks_encrypt_method method, const uint8_t *key, size_t key_len) {
     struct socks_encryptor *encryptor;
 

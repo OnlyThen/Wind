@@ -377,7 +377,7 @@ int socks_request_handle(struct socks_conn_context *conn, struct socks_conn_info
 	int s_addr = inet_aton("0.0.0.0", NULL);
 	uint32_t us_addr = htonl(s_addr);
 	memcpy(&buf->data[4], &us_addr, 4);
-	//buf->data[4] = 0x1;
+	buf->data[4] = 0x1;
 	buf->data[4 + 4] = 0x19;
 	buf->data[4 + 5] = 0x19;
 	buf->used = 10;
