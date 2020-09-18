@@ -68,12 +68,8 @@ static struct socks_request_frame *socks_get_requests(struct socks_request_frame
 	if (buf->data[0] != 0x05 || buf->data[2] != 0) {
 		return NULL;
 	}
-	if (buf->data[1] != 0x01) {
-		debug_print("only support CONNECT CMD now -_-");
-		return NULL;
-	}
 	request->ver = 0x05;
-	request->cmd = 0x01;
+	request->cmd = buf->data[1];
 	request->rsv = 0x0;
 	switch (buf->data[3]) { /* ATYP */
 	case 0x01: /* IPv4 */
@@ -88,6 +84,9 @@ static struct socks_request_frame *socks_get_requests(struct socks_request_frame
 		request->atyp = 0x03;
 		ret = server->socks_recv(conn->conn_fd, request->dst_addr, 1, 0, conn);
 		if (ret != 1) {
+			return NULL;
+		}
+		if (ret > 255) {
 			return NULL;
 		}
 		ret = server->socks_recv(conn->conn_fd, &request->dst_addr[1], request->dst_addr[0], 0, conn);
@@ -163,7 +162,7 @@ static int socks_poll(struct socks_server_context *server) {
 	memcpy(&set->copy_rfds, &set->rfds, sizeof(fd_set));
 	memcpy(&set->copy_wfds, &set->wfds, sizeof(fd_set));
 	retval = select(server->max_fd + 1, &set->copy_rfds, &set->copy_wfds, NULL, NULL);
-	printf("retval: %d\n", retval);
+	//printf("retval: %d\n", retval);
 	if (retval > 0) {
 		if (FD_ISSET(server->sock_fd, &set->copy_rfds)) {
 			server->io_proc.mask |= AE_READABLE;
@@ -207,10 +206,10 @@ struct socks_server_context *socks_create_server(uint16_t port, enum socks_encry
 	server->fd_mask = AE_READABLE;
 	server->max_fd = server->sock_fd;
 	if (socks_fd_set_init(&server->ss_allfd_set) < 0) {
-		DIE("ss_fd_set_init failed");
+		DIE("socks_fd_set_init failed");
 	}
 	if (socks_fd_set_add_fd(server->ss_allfd_set, server->sock_fd, AE_READABLE) < 0) {
-		DIE("ss_fd_set_add_fd failed");
+		DIE("socks_fd_set_add_fd failed");
 	}
 	server->conn = calloc(1, sizeof(*server->conn));
 	if (server->conn == NULL) {
@@ -261,7 +260,7 @@ struct socks_conn_context *socks_server_add_conn(struct socks_server_context *s,
 	s->conn_count += 1;
 	s->max_fd = (conn_fd > s->max_fd) ? conn_fd : s->max_fd;
 	if (socks_fd_set_add_fd(s->ss_allfd_set, conn_fd, mask) < 0) {
-		DIE("ss_fd_set_add_fd failed");
+		DIE("socks_fd_set_add_fd failed");
 	}
 	if (s->encryptor) {
 		new_conn->encryptor = malloc(sizeof(*new_conn->encryptor));
@@ -287,14 +286,14 @@ struct socks_remote_context *socks_conn_add_remote(struct socks_conn_context *co
 	new_remote->server_entry = s;
 	new_remote->conn_entry = conn;
 	new_remote->fd_mask = mask;
-	if (event){
+	if (event) {
 		memcpy(&new_remote->io_proc, event, sizeof(*event));
 	}
 	conn->remote = new_remote;
 	conn->remote_count += 1;
 	s->max_fd = (new_remote->remote_fd > s->max_fd) ? new_remote->remote_fd : s->max_fd;
 	if (socks_fd_set_add_fd(s->ss_allfd_set, new_remote->remote_fd, mask) < 0) {
-		DIE("ss_fd_set_add_fd failed");
+		DIE("socks_fd_set_add_fd failed");
 	}
 	list_add(&new_remote->list, &s->remote->list) ;
 	return new_remote;
@@ -302,7 +301,6 @@ struct socks_remote_context *socks_conn_add_remote(struct socks_conn_context *co
 
 void socks_server_del_conn(struct socks_server_context *s, struct socks_conn_context *conn) {
 	struct socks_remote_context *remote = conn->remote;
-
 	if (conn->remote != NULL) {
 		remote->conn_entry = NULL;
 	}
@@ -334,6 +332,10 @@ int socks_handshake_handle(struct socks_conn_context *conn) {
 	if (buf->data[0] != 0x05) {
 		goto err;
 	}
+	if (buf->data[1] == 0) {
+		goto err;
+	}
+	printf("client methods num: %d\n", buf->data[1]);
 	/* TODO: 检查客户端支持的认证机制 */
 	buf->data[0] = 0x05;
 	buf->data[1] = 0x0; /* NO AUTHENTICATION REQUIRED */
@@ -351,27 +353,27 @@ err:
 
 int socks_request_handle(struct socks_conn_context *conn, struct socks_conn_info *remote_info) {
 	/* TODO */
-	struct socks_request_frame requests;
+	struct socks_request_frame request;
 	struct socks_server_context *server = conn->server_entry;
 	struct buffer *buf = server->buf;
 	int ret;
 
-	if (socks_get_requests(&requests, conn->conn_fd, conn) == NULL) {
+	if (socks_get_requests(&request, conn->conn_fd, conn) == NULL) {
 		debug_print("ss_get_requests() failed: %s", strerror(errno));
 		return -1;
 	}
-	if (get_addr_info(&requests, remote_info) == NULL) {
+	if (get_addr_info(&request, remote_info) == NULL) {
 		debug_print("get_addr_info() failed: %s", strerror(errno));
 		return -1;
 	}
 	buf->data[0] = 0x5;
 	buf->data[1] = 0x0;
 	buf->data[2] = 0x0;
-	buf->data[3] = 0x1;
+	buf->data[3] = request.atyp;
 	int s_addr = inet_aton("0.0.0.0", NULL);
 	uint32_t us_addr = htonl(s_addr);
 	memcpy(&buf->data[4], &us_addr, 4);
-	buf->data[4] = 0x1;
+	//buf->data[4] = 0x1;
 	buf->data[4 + 4] = 0x19;
 	buf->data[4 + 5] = 0x19;
 	buf->used = 10;

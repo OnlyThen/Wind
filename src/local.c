@@ -45,10 +45,16 @@ static void client_to_remote(struct socks_conn_context *conn) {
 		return;
 	}
 	readed = recv(conn->conn_fd, buf->data, buf->max, MSG_DONTWAIT);
+
 	if (readed <= 0) {
 		socks_server_del_conn(server, conn);
 		return;
 	}
+	printf("----readed: %d----\n", readed);
+	for (int i = 0; i < readed; i += 1) {
+		printf("%02x", buf->data[i]);
+	}
+	printf("\n");
 	remote = conn->remote;
 	ret = server->socks_send(remote->remote_fd, buf->data, readed, 0, conn);
 	if (ret != readed) {
@@ -77,7 +83,7 @@ static void socks_io_handle(void *conn, int fd, void *data, int mask) {
 			return;
         }
 		if (socks_conn_add_remote(conn_ptr, AE_READABLE, &remote_info, &event) == NULL) {
-			debug_print("ss_conn_add_remote() failed: %s", strerror(errno));
+			debug_print("socks_conn_add_remote() failed: %s", strerror(errno));
 			goto err;
 		}
 		conn_ptr->conn_state = CONNECTING;
@@ -103,19 +109,18 @@ static void socks_accept_handle(void *s, int fd, void *data, int mask) {
 
 	conn_fd = socks_accept(fd, conn_info.ip, &conn_info.port);
 	if (conn_fd < 0) {
-		debug_print("ss_accetp failed: %s", strerror(errno));
+		debug_print("socks_accetp failed: %s", strerror(errno));
 		return;
 	}
 	conn_ctx = socks_server_add_conn(s, conn_fd, AE_READABLE, &conn_info);
 	if (conn_ctx == NULL) {
-		debug_print("ss_server_add_conn failed: %s", strerror(errno));
+		debug_print("socks_server_add_conn failed: %s", strerror(errno));
 		return;
 	}
 	socks_conn_set_handle(conn_ctx, AE_READABLE, socks_io_handle, NULL, NULL);
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 	struct socks_server_context *local_server;
 	enum socks_encrypt_method encry_method = NO_ENCRYPT;
 	struct encryptor_key *enc_key = NULL;
