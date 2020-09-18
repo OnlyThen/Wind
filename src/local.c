@@ -50,11 +50,7 @@ static void client_to_remote(struct socks_conn_context *conn) {
 		socks_server_del_conn(server, conn);
 		return;
 	}
-	printf("----readed: %d----\n", readed);
-	for (int i = 0; i < readed; i += 1) {
-		printf("%02x", buf->data[i]);
-	}
-	printf("\n");
+	
 	remote = conn->remote;
 	ret = server->socks_send(remote->remote_fd, buf->data, readed, 0, conn);
 	if (ret != readed) {

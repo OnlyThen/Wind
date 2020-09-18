@@ -68,6 +68,10 @@ static struct socks_request_frame *socks_get_requests(struct socks_request_frame
 	if (buf->data[0] != 0x05 || buf->data[2] != 0) {
 		return NULL;
 	}
+	if (buf->data[1] != 0x01) {
+ 		debug_print("only support CONNECT CMD now -_-");
+ 		return NULL;
+ 	}
 	request->ver = 0x05;
 	request->cmd = buf->data[1];
 	request->rsv = 0x0;
