@@ -52,7 +52,7 @@ static ssize_t _send(int sockfd, void *buf, size_t len, int flags, struct socks_
 }
 
 static ssize_t encry_send(int sockfd, void *buf, size_t len, int flags, struct socks_conn_context *conn) {
-	socks_decrypt(conn->encryptor, buf, buf, len);
+	socks_encrypt(conn->encryptor, buf, buf, len);
 	return send(sockfd, buf, len, flags);
 }
 
