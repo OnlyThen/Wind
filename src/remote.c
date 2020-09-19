@@ -23,7 +23,7 @@ static void socks_remote_io_handle(void *remote, int fd, void *data, int mask) {
 		socks_del_remote(server, remote_ptr);
 		return;
 	}
-	printf("readed: %d\n", readed);
+	printf("readed from server: %d\n", readed);
 	for (int i = 0; i < readed; i += 1) {
 		printf("%02x", buf->data[i]);
 	}
@@ -54,7 +54,11 @@ static void client_to_remote(struct socks_conn_context *conn) {
 		socks_server_del_conn(server, conn);
 		return;
 	}
-	
+	printf("readed from local: %d\n", readed);
+	for (int i = 0; i < readed; i += 1) {
+		printf("%02x", buf->data[i]);
+	}
+	printf("\n");
 	remote = conn->remote;
 	ret = send(remote->remote_fd, buf->data, readed, 0);
 	if (ret != readed) {
