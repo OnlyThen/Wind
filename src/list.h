@@ -46,7 +46,7 @@ static inline void __list_add(struct list_head *new_head, struct list_head *prev
 
 /**
  * list_add - add a new entry
- * @new: new entry to be added
+ * @new_head: new entry to be added
  * @head: list head to add it after
  *
  * Insert a new entry after the specified head.
