@@ -123,6 +123,7 @@ static void socks_accept_handle(void *s, int fd, void *data, int mask) {
 		debug_print("socks_server_add_conn failed: %s", strerror(errno));
 		return;
 	}
+	printf("add conn\n");
 	socks_conn_set_handle(conn_ctx, AE_READABLE, socks_io_handle, NULL, NULL);
 }
 

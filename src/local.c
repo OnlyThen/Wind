@@ -62,6 +62,7 @@ static void client_to_remote(struct socks_conn_context *conn) {
 	printf("\n");
 	remote = conn->remote;
 	ret = server->socks_send(remote->remote_fd, buf->data, readed, 0, conn);
+	printf("local sended %d\n", ret);
 	if (ret != readed) {
 		debug_print("send return %d, should send %d: %s", ret, readed, strerror(errno));
 		if (ret == -1 && errno != EAGAIN) {

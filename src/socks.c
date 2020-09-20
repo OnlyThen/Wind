@@ -53,6 +53,7 @@ static ssize_t _send(int sockfd, void *buf, size_t len, int flags, struct socks_
 
 static ssize_t encry_send(int sockfd, void *buf, size_t len, int flags, struct socks_conn_context *conn) {
 	socks_encrypt(conn->encryptor, buf, buf, len);
+
 	return send(sockfd, buf, len, flags);
 }
 
@@ -326,7 +327,7 @@ int socks_handshake_handle(struct socks_conn_context *conn) {
 	ssize_t ret;
 	struct buffer *buf = conn->server_entry->buf;
 
-	ret = recv(conn->conn_fd, buf->data, 262, 0);
+	ret = recv(conn->conn_fd, buf->data, 4096, 0);
 	if (ret <= 0) {
 		goto err;
 	}
@@ -364,6 +365,7 @@ int socks_request_handle(struct socks_conn_context *conn, struct socks_conn_info
 		debug_print("get_addr_info() failed: %s", strerror(errno));
 		return -1;
 	}
+	printf("connect done\n");
 	buf->data[0] = 0x5;
 	buf->data[1] = 0x0;
 	buf->data[2] = 0x0;
