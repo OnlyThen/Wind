@@ -1,5 +1,6 @@
 #include "encrypt.h"
 #include <string.h>
+#include <stdio.h>
 
 struct socks_encryptor *socks_create_encryptor(enum socks_encrypt_method method, const uint8_t *key, size_t key_len) {
     struct socks_encryptor *encryptor;
@@ -11,8 +12,6 @@ struct socks_encryptor *socks_create_encryptor(enum socks_encrypt_method method,
         encryptor->xor_enc.key_len = key_len;
         encryptor->xor_enc.key = calloc(1, key_len);
         memcpy(encryptor->xor_enc.key, key, key_len);
-		printf("enc_location %ld\n", encryptor->xor_enc.encrypt_location);
-		printf("enc_location %ld\n", encryptor->xor_enc.decrypt_location);
 		return encryptor;
     case RC4_METHOD:
 		encryptor = calloc(1, sizeof(typeof(*encryptor)));
