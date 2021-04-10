@@ -28,6 +28,8 @@ set(REMOTE_SRCS
     remote.c
 )
 # 编译源码生成目标
+IF(APPLE)
+SET(CMAKE_OSX_ARCHITECTURES "x86_64; arm64")
+ENDIF()
 add_executable(local ${LOCAL_SRCS})
-
 add_executable(remote ${REMOTE_SRCS})
