@@ -3,11 +3,13 @@
 
 #include "xor.h"
 #include "rc4.h"
+#include "aes.h"
 
 enum socks_encrypt_method {
 	NO_ENCRYPT = 0,
 	XOR_METHOD = 1,
 	RC4_METHOD = 2,
+	AES_256    = 3
 };
 
 struct socks_encryptor {
@@ -15,6 +17,7 @@ struct socks_encryptor {
 	union {
 		struct xor_encryptor xor_enc;
 		struct rc4_encryptor rc4_enc;
+		struct aes_encryptor aes_enc;
 	};
 };
 

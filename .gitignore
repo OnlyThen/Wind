@@ -1,2 +1,4 @@
 .DS_Store
 /macOS_build
+/win_build
+/linux_build
